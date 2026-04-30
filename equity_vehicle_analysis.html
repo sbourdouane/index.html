@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reformation Peer Group — LTI Equity Vehicle Analysis</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+  /* ── Semler Brossy Brand Palette (PPT/Word) ─────────────────────────────
+     DARK 2  (primary navy)   : #002855  RGB 0,40,85
+     ACCENT 1 (dark teal/blue): #005587  RGB 0,85,135
+     ACCENT 2 (mid teal)      : #0096BC  RGB 0,150,188
+     ACCENT 3 (light cyan)    : #05C3DE  RGB 5,195,222
+     ACCENT 4 (lime green)    : #78BE20  RGB 120,190,32
+     DARK 5  (orange)         : #FF7F32  RGB 255,127,50
+     ACCENT 6 (pink)          : #E569B1  RGB 229,105,177
+     LIGHT 2 (mid gray)       : #D9D9D5  approx
+  ─────────────────────────────────────────────────────────────────────── */
+  :root {
+    --sb-navy:    #002855;
+    --sb-a1:      #005587;
+    --sb-a2:      #0096BC;
+    --sb-a3:      #05C3DE;
+    --sb-green:   #78BE20;
+    --sb-orange:  #FF7F32;
+    --sb-pink:    #E569B1;
+    --sb-gray:    #D9D9D5;
+    --sb-light:   #F4F6F8;
+    --sb-border:  #DDE2EA;
+    --sb-text:    #1A1A1A;
+    --sb-subtle:  #5A6577;
+
+    /* vehicle color assignments */
+    --so-color:   #002855;   /* SO  → SB navy */
+    --rs-color:   #0096BC;   /* RS  → SB teal */
+    --ps-color:   #FF7F32;   /* PS  → SB orange */
+    --pso-color:  #78BE20;   /* PSO → SB green */
+    --na-color:   #B0B8C4;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: Calibri, 'Segoe UI', Arial, sans-serif;
+    background: var(--sb-light);
+    color: var(--sb-text);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  /* ── HEADER ─────────────────────────────────────────────── */
+  .page-header {
+    background: var(--sb-navy);
+    color: #fff;
+    padding: 26px 40px 20px;
+    border-bottom: 4px solid var(--sb-a2);
+  }
+  .page-header h1 {
+    font-size: 19px; font-weight: 700; letter-spacing: 0.2px;
+  }
+  .page-header .meta {
+    margin-top: 6px; font-size: 11.5px; color: #8BADD0;
+    display: flex; gap: 22px; flex-wrap: wrap;
+  }
+  .page-header .meta span::before { content: "· "; }
+
+  /* ── SECTION ─────────────────────────────────────────────── */
+  .section { padding: 26px 40px; }
+  .section + .section { border-top: 1px solid var(--sb-border); }
+  .section-title {
+    font-size: 10.5px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 1px; color: var(--sb-navy); margin-bottom: 16px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .section-title::after {
+    content: ""; flex: 1; height: 1px; background: var(--sb-border);
+  }
+
+  /* ── SUMMARY CARDS ───────────────────────────────────────── */
+  .cards-row {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
+  }
+  .card {
+    background: #fff; border: 1px solid var(--sb-border);
+    border-radius: 6px; padding: 16px 18px;
+    position: relative; overflow: hidden;
+  }
+  .card::after {
+    content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  }
+  .card.so::after  { background: var(--so-color); }
+  .card.rs::after  { background: var(--rs-color); }
+  .card.ps::after  { background: var(--ps-color); }
+  .card.pso::after { background: var(--pso-color); }
+
+  .card-label { font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.8px; }
+  .card.so  .card-label { color: var(--so-color); }
+  .card.rs  .card-label { color: var(--rs-color); }
+  .card.ps  .card-label { color: var(--ps-color); }
+  .card.pso .card-label { color: var(--pso-color); }
+  .card-name { font-size: 11.5px; color: var(--sb-subtle); margin-top: 2px; }
+  .card-count { font-size: 30px; font-weight: 700; margin-top: 8px; line-height: 1; }
+  .card.so  .card-count { color: var(--so-color); }
+  .card.rs  .card-count { color: var(--rs-color); }
+  .card.ps  .card-count { color: var(--ps-color); }
+  .card.pso .card-count { color: var(--pso-color); }
+  .card-pct { font-size: 11.5px; color: var(--sb-subtle); margin-top: 3px; }
+
+  /* ── FINDINGS ─────────────────────────────────────────────── */
+  .findings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .finding {
+    background: #fff; border: 1px solid var(--sb-border);
+    border-left: 3px solid var(--sb-a2);
+    border-radius: 3px; padding: 10px 13px;
+    font-size: 12.5px; line-height: 1.55;
+  }
+  .finding strong { color: var(--sb-navy); }
+
+  /* ── CHARTS ───────────────────────────────────────────────── */
+  .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .chart-box {
+    background: #fff; border: 1px solid var(--sb-border);
+    border-radius: 6px; padding: 18px 20px;
+  }
+  .chart-box.full { grid-column: 1 / -1; }
+  .chart-box h3 {
+    font-size: 11px; font-weight: 700; color: var(--sb-subtle);
+    text-transform: uppercase; letter-spacing: 0.7px; margin-bottom: 14px;
+  }
+
+  /* ── LEGEND ───────────────────────────────────────────────── */
+  .legend-row { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 12px; }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--sb-subtle); }
+  .legend-swatch { width: 11px; height: 11px; border-radius: 2px; flex-shrink: 0; }
+
+  /* ── TABLE ────────────────────────────────────────────────── */
+  .table-scroll { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  thead tr { background: var(--sb-navy); color: #fff; }
+  thead th {
+    padding: 9px 10px; text-align: left;
+    font-size: 10.5px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.6px; white-space: nowrap;
+  }
+  thead th.c { text-align: center; }
+  tbody tr { border-bottom: 1px solid var(--sb-border); }
+  tbody tr:nth-child(even) { background: #F9FAFB; }
+  tbody tr:hover { background: #EEF4FB; }
+  tbody td { padding: 8px 10px; vertical-align: top; }
+  tbody td.c { text-align: center; }
+
+  .badge {
+    display: inline-block; padding: 2px 7px; border-radius: 10px;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.3px; white-space: nowrap;
+  }
+  .by  { background: #D6EBF5; color: #005587; }
+  .bn  { background: #F0F2F5; color: #8A95A3; }
+  .bna { background: #FFF3CD; color: #7A5C00; }
+  .bng { background: #FEEAEA; color: #9B2020; }
+
+  .co-name { font-weight: 700; color: var(--sb-navy); }
+  .tk {
+    display: inline-block; background: var(--sb-navy); color: #fff;
+    font-size: 9px; font-weight: 700; padding: 1px 5px;
+    border-radius: 3px; letter-spacing: 0.5px; margin-right: 4px;
+  }
+  .note { font-size: 11px; color: var(--sb-subtle); line-height: 1.45; }
+  .fl  { color: var(--sb-orange); font-weight: 700; }
+
+  /* inline mix bars */
+  .mbar { display: flex; height: 8px; border-radius: 3px; overflow: hidden; width: 100%; min-width: 75px; margin-bottom: 3px; }
+  .mbar-seg { height: 100%; }
+  .mlabel { font-size: 10px; color: var(--sb-subtle); }
+
+  /* ── FOOTER ────────────────────────────────────────────────── */
+  .footer {
+    background: var(--sb-navy); color: #6A8AAC;
+    padding: 13px 40px; font-size: 10.5px;
+  }
+</style>
+</head>
+<body>
+
+<!-- ════════════════ HEADER -->
+<div class="page-header">
+  <h1>Reformation Peer Group — LTI Equity Vehicle Analysis</h1>
+  <div class="meta">
+    <span>17 Companies · One Row Per Company (Core Annual Program)</span>
+    <span>Proxy Years 2015–2022</span>
+    <span>Vehicles: Stock Options · Time-Based RSUs · Performance Shares/PSUs · Performance Stock Options</span>
+    <span>Semler Brossy</span>
+  </div>
+</div>
+
+<!-- ════════════════ SUMMARY CARDS -->
+<div class="section">
+  <div class="section-title">Vehicle Prevalence — 17 Companies, Core Annual Program</div>
+  <div class="cards-row">
+    <div class="card so">
+      <div class="card-label">SO</div>
+      <div class="card-name">Stock Options (Time-Based)</div>
+      <div class="card-count">15</div>
+      <div class="card-pct">of 17 &nbsp;·&nbsp; <strong>88%</strong> prevalence</div>
+    </div>
+    <div class="card rs">
+      <div class="card-label">RS / RSU</div>
+      <div class="card-name">Time-Based Restricted Stock / RSUs</div>
+      <div class="card-count">11</div>
+      <div class="card-pct">of 17 &nbsp;·&nbsp; <strong>65%</strong> prevalence</div>
+    </div>
+    <div class="card ps">
+      <div class="card-label">PS / PRSU</div>
+      <div class="card-name">Performance Shares / PSUs / PRSUs</div>
+      <div class="card-count">1</div>
+      <div class="card-pct">of 17 &nbsp;·&nbsp; <strong>6%</strong> prevalence</div>
+    </div>
+    <div class="card pso">
+      <div class="card-label">PSO</div>
+      <div class="card-name">Performance Stock Options</div>
+      <div class="card-count">0</div>
+      <div class="card-pct">of 17 &nbsp;·&nbsp; <strong>0%</strong> prevalence</div>
+    </div>
+  </div>
+  <p style="font-size:11px;color:var(--sb-subtle);margin-top:10px;">
+    AKA excluded from vehicle counts (LLC Incentive Units — not standard equity vehicles). LVLU excluded from mix analysis (no formal annual grant cycle).
+    RVLV reflects outstanding legacy options (no new grants made in FY2019). HIMS reflects core annual program mix per most recent disclosure.
+  </p>
+</div>
+
+<!-- ════════════════ KEY FINDINGS -->
+<div class="section">
+  <div class="section-title">Key Findings</div>
+  <div class="findings-grid">
+    <div class="finding"><strong>Options nearly universal in this cohort.</strong> 88% of companies use stock options, driven by a peer group built largely from recently-IPO'd or PE-backed consumer/DTC brands whose programs originated in a private-company context. Options remain the single most prevalent vehicle by far.</div>
+    <div class="finding"><strong>RSUs broadly adopted but still secondary.</strong> 65% use time-based RSUs — most often introduced at or shortly after IPO as a complement to options. The trajectory across filing years clearly trends from options-only toward SO+RSU and eventually RSU-led blends as companies mature post-IPO.</div>
+    <div class="finding"><strong>Performance equity nearly absent.</strong> Only 1 of 17 companies (HIMS) uses performance-based equity in its core annual program — PRSUs at 35% of annual LTI. No company has implemented traditional financial-metric PSUs in a formal annual cycle. The peer group is overwhelmingly pre-performance-equity.</div>
+    <div class="finding"><strong>PSOs not present in any annual program.</strong> Zero companies use performance stock options in their recurring grant cycle. This vehicle is entirely absent across the full peer group on a core annual program basis.</div>
+    <div class="finding"><strong>Three dominant program archetypes.</strong> Programs cluster around: (1) <strong>Options-only</strong> — 6 companies (35%); (2) <strong>SO + RSU blend</strong> — 8 companies (47%); (3) <strong>RSU-dominant or multi-vehicle</strong> — 2 companies (12%). HIMS stands alone as the only company with performance equity in its annual cycle.</div>
+    <div class="finding"><strong>Several programs nascent or non-recurring.</strong> BRLT, TDUP, LVLU, RVLV, and AKA had not yet established a structured annual LTI cycle at time of filing. Grants primarily reflect new-hire, IPO, or PE-conversion packages rather than repeatable program design.</div>
+  </div>
+</div>
+
+<!-- ════════════════ CHARTS -->
+<div class="section">
+  <div class="section-title">Visual Analysis</div>
+  <div class="charts-row">
+
+    <!-- Prevalence bar -->
+    <div class="chart-box">
+      <h3>Vehicle Prevalence (# of Companies Using)</h3>
+      <div style="position:relative;height:200px;">
+        <canvas id="prevChart"></canvas>
+      </div>
+      <div class="legend-row">
+        <div class="legend-item"><div class="legend-swatch" style="background:var(--so-color)"></div>SO</div>
+        <div class="legend-item"><div class="legend-swatch" style="background:var(--rs-color)"></div>RS/RSU</div>
+        <div class="legend-item"><div class="legend-swatch" style="background:var(--ps-color)"></div>PS/PRSU</div>
+        <div class="legend-item"><div class="legend-swatch" style="background:var(--pso-color)"></div>PSO</div>
+      </div>
+    </div>
+
+    <!-- Composition donut -->
+    <div class="chart-box">
+      <h3>Program Composition (17 Companies)</h3>
+      <div style="position:relative;height:200px;">
+        <canvas id="compChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Mix by company — full width -->
+    <div class="chart-box full">
+      <h3>LTI Vehicle Mix by Company — % of Annual LTI (Core Annual Program, Disclosed or Derived)</h3>
+      <div style="position:relative;height:390px;">
+        <canvas id="mixChart"></canvas>
+      </div>
+      <div class="legend-row" style="margin-top:10px;">
+        <div class="legend-item"><div class="legend-swatch" style="background:var(--so-color)"></div>SO — Stock Options</div>
+        <div class="legend-item"><div class="legend-swatch" style="background:var(--rs-color)"></div>RS/RSU — Time-Based</div>
+        <div class="legend-item"><div class="legend-swatch" style="background:var(--ps-color)"></div>PS/PRSU — Performance Shares</div>
+        <div class="legend-item"><div class="legend-swatch" style="background:var(--pso-color)"></div>PSO — Performance Stock Options</div>
+      </div>
+      <p style="font-size:11px;color:var(--sb-subtle);margin-top:7px;">
+        AKA (LLC Incentive Units) and LVLU (no formal annual program) excluded from mix chart.
+        RVLV reflects outstanding legacy pre-IPO options; WRBY reflects regular annual program only (founders mega-grant excluded). HIMS reflects core annual program mix per updated disclosure.
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════ DETAIL TABLE -->
+<div class="section">
+  <div class="section-title">Detailed Vehicle Summary — Core Annual Program, One Row Per Company</div>
+  <div class="table-scroll">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:150px;">Company</th>
+          <th>Proxy Filed</th>
+          <th>FYE</th>
+          <th class="c">SO</th>
+          <th class="c">RS/RSU</th>
+          <th class="c">PS/PRSU</th>
+          <th class="c">PSO</th>
+          <th style="width:130px;">Mix</th>
+          <th>Mix Source</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+
+        <!-- WRBY -->
+        <tr>
+          <td><span class="tk">WRBY</span><span class="co-name">Warby Parker</span></td>
+          <td>Apr 2022</td><td>Dec 2021</td>
+          <td class="c"><span class="badge by">YES</span></td>
+          <td class="c"><span class="badge by">YES</span></td>
+          <td class="c"><span class="badge bn">NO</span></td>
+          <td class="c"><span class="badge bn">NO</span></td>
+          <td>
+            <div class="mbar">
+              <div class="mbar-seg" style="width:75%;background:var(--so-color)"></div>
+              <div class="mbar-seg" style="width:25%;background:var(--rs-color)"></div>
+            </div>
+            <div class="mlabel">75% SO / 25% RS</div>
+          </td>
+          <td>CDA stated</td>
+          <td class="note">Regular annual program: 75/25 SO/RSU, consistent across all NEOs (Co-CEOs + CFO). Options vest 1/48 monthly (4 yr); RSUs vest quarterly (4 yr). <span class="fl">★</span> One-time Co-CEO Founders Grant (stock-price-hurdle PSUs + RSUs, ~$99M each) excluded from core annual analysis — not a repeating program vehicle.</td>
+        </tr>
+
+        <!-- AKA -->
+        <tr>
+          <td><span class="tk">AKA</span><span class="co-name">a.k.a. Brands</span></td>
+          <td>Apr 2022</td><td>Dec 2021</td>
+          <td class="c"><span class="badge bna">N/A</span></td>
+          <td class="c"><span class="badge bna">N/A</span></td>
+          <td class="c"><span class="badge bna">N/A</span></td>
+          <td class="c"><span class="badge bna">N/A</span></td>
+          <td><div class="mlabel" style="color:var(--sb-subtle)">Not applicable</div></td>
+          <td>N/A</td>
+          <td class="note">All LTI = pre-IPO LLC Incentive Units (Excelerate, L.P. profits interests) — not standard equity. 2021 Omnibus Plan adopted at IPO but zero grants made in FY2021. ~60–75% time-vesting / ~25–40% performance-vesting (3x investor return hurdle). Standard vehicle analysis does not apply.</td>
+        </tr>
+
+        <!-- FIGS -->
+        <tr>
+          <td><span class="tk">FIGS</span><span class="co-name">FIGS, Inc.</span></td>
+          <td>Apr 2022</td><td>Dec 2021</td>
+          <td class="c"><span class="badge by">YES</span></td>
+          <td class="c"><span class="badge by">YES</span></td>
+          <td class="c"><span class="badge bn">NO</span></td>
+          <td class="c"><span class="badge bn">NO</span></td>
+          <td>
+            <div class="mbar">
+              <div class="mbar-seg" style="width:75%;background:var(--so-color)"></div>
+              <div class="mbar-seg" style="width:25%;background:var(--rs-color)"></div>
+            </div>
+            <div class="mlabel">75% SO / 25% RS</div>
+          </td>
+          <td>CDA stated ($)</td>
+          <td class="note">IPO June 2021. Explicit 75/25 SO/RSU split across all NEOs by design (dollar values stated in CD&A). Options vest 1/48 monthly (4 yr); RSUs vest 1/16 quarterly (4 yr). Historically options-only pre-IPO. Pay Governance as CC advisor.</td>
+        </tr>
+
+        <!-- HNST -->
+        <tr>
+          <td><span class="tk">HNST</span><span class="co-name">Honest Company</span></td>
+          <td>Apr 2022</td><td>Dec 2021</td>
+          <td class="c"><span class="badge bn">NO</span></td>
+          <td class="c"><span class="badge by">YES</span></td>
+          <td class="c"><span class="badge bn">NO</span></td>
+          <td class="c"><span class="badge bn">NO</span></td>
+          <td>
+            <div class="mbar">
+              <div class="mbar-seg" style="width:100%;background:var(--rs-color)"></div>
+            </div>
+            <div class="mlabel">100% RS/RSU</div>
+          </td>
+          <td>CDA stated</td>
+          <td class="note">Post-IPO (May 2021) explicit policy shift from options to RSUs — CD&A states RSUs preferred for retention value and resilience to price volatility. All FY2021 NEO grants = RSU-only IPO Awards. CEO, CFO, CCO (Jessica Alba) all RSU-only.</td>
+        </tr>
+
+        <!-- OLPX -->
+        <tr>
+          <td><span class="tk">OLPX</span><span class="co-name">Olaplex Holdings</span></td>
+          <td>Apr 2022</td><td>Dec 2021</td>
+          <td class="c"><span class="badge by">YES</span></td>
+          <td class="c"><span class="badge bn">NO</span></td>
+          <td class="c"><span class="badge bn">NO</span></td>
+          <td class="c"><span class="badge bn">NO</span></td>
+          <td>
+            <div class="mbar">
+              <div class="mbar-seg" style="width:100%;background:var(--so-color)"></div>
+            </div>
+            <div class="mlabel">100% SO</div>
+          </td>
+          <td>CDA stated</td>
+          <td class="note">PE-backed (Advent International). All NEO LTI = NQSOs converted from pre-IPO Penelope Holdings 2020 Plan. Performance-vesting tranche converted to time-based at IPO. No RSUs or performance equity. CEO/COO had no new grants in FY2021; CFO Tiziani received new-hire grant (June 2021).</td>
+        </tr>
+
+        <!-- BRLT -->
+        <tr>
+          <td><span class="tk">BRLT</span><span class="co-name">Brilliant Earth</span></td>
+          <td>Apr 2022</td><td>Dec 2021</td>
+          <td class="c"><span class="badge by">YES</span></td>
+          <td class="c"><span class="badge bn">NO</span></td>
+          <td class="c"><span class="badge bn">NO</span></td>
+          <td class="c"><span class="badge bn">NO</span></td>
+          <td>
+            <div class="mbar">
+              <div class="mbar-seg" style="width:100%;background:var(--so-color)"></div>
+            </div>
+            <div class="mlabel">100% SO</div>
+          </td>
+          <td>GOPBA</td>
+          <td class="note"><span class="fl">⚠</span> No formal annual LTI program in FY2021. Only CFO Kuo received equity plan grants (54,465 anti-dilution options at $12.00 IPO price — one-time make-whole). Founder CEO/Executive Chairman held LLC Interests only. Post-period (Feb 2022): Kuo received first RSU grant, signaling program evolution.</td>
+        </tr>
+
+        <!-- RENT -->
+        <tr>
+          <td><span class="tk">RENT</span><span class="co-name">Rent the Runway</span></td>
+          <td>May 2022</td><td>Jan 2022</td>
+          <td class="c"><span class="badge by">YES</span></td>
+          <td class="c"><span class="badge by">YES</span></td>
+          <td class="c"><span class="badge bn">NO</span></td>
+          <td class="c"><span class="badge bn">NO</span></td>
+          <td>
+            <div class="mbar">
+              <div class="mbar-seg" style="width:69%;background:var(--so-color)"></div>
+              <div class="mbar-seg" style="width:31%;background:var(--rs-color)"></div>
+            </div>
+            <div class="mlabel">~69% SO / ~31% RS</div>
+          </td>
+          <td>GOPBA GDFV</td>
+          <td class="note">IPO Oct 2021. FY2021 mix reflects blend of Mar 2021 pre-IPO options and Oct 2021 IPO RSU grants (67,842 RSUs each to all 3 NEOs). Options vest 25%/yr 1 then monthly/36 mo; RSUs vest 25% at grant then quarterly ~4 yrs. Mix is option-weighted due to pre-IPO grant sizing.</td>
+        </tr>
+
+        <!-- LVLU -->
+        <tr>
+          <td><span class="tk">LVLU</span><span class="co-name">Lulu's Fashion Lounge</span></td>
+          <td>Apr 2022</td><td>Jan 2022</td>
+          <td class="c"><span class="badge by">YES</span></td>
+          <td class="c"><span class="badge by">YES</span></td>
+          <td class="c"><span class="badge bn">NO</span></td>
+          <td class="c"><span class="badge bn">NO</span></td>
+          <td><div class="mlabel" style="color:var(--sb-subtle)">Mix N/A — no annual program</div></td>
+          <td>Narrative / Employ. Agmt</td>
+          <td class="note"><span class="fl">⚠</span> No recurring annual LTI program as of filing. CEO McCreight (hired Apr 2021) received hire-package options (322,793 SO at $11.35) + deferred stock awards. Co-Presidents received LP conversion restricted shares at IPO. Post-period: McCreight received 25,874 fully-vested RSUs per employment agreement.</td>
+        </tr>
+
+        <!-- TDUP -->
+        <tr>
+          <td><span class="tk">TDUP</span><span class="co-name">ThredUp</span></td>
+          <td>Apr 2022</td><td>Dec 2021</td>
+          <td class="c"><span class="badge by">YES</span></td>
+          <td class="c"><span class="badge bn">NO</span></td>
+          <td class="c"><span class="badge bn">NO</span></td>
+          <td class="c"><span class="badge bn">NO</span></td>
+          <td>
+            <div class="mbar">
+              <div class="mbar-seg" style="width:100%;background:var(--so-color)"></div>
+            </div>
+            <div class="mlabel">100% SO (legacy)</div>
+          </td>
+          <td>CDA stated</td>
+          <td class="note"><span class="fl">⚠</span> No new equity awards granted to any NEO in FY2021 — CD&A explicitly confirms. Outstanding equity = legacy pre-IPO options only. FY2022 will introduce performance-linked RSUs tied to cash bonus, signaling forthcoming program evolution.</td>
+        </tr>
+
+        <!-- HIMS — updated per user input -->
+        <tr>
+          <td><span class="tk">HIMS</span><span class="co-name">Hims &amp; Hers Health</span></td>
+          <td>Apr 2022</td><td>Dec 2021</td>
+          <td class="c"><span class="badge by">YES</span></td>
+          <td class="c"><span class="badge by">YES</span></td>
+          <td class="c"><span class="badge by">YES</span></td>
+          <td class="c"><span class="badge bn">NO</span></td>
+          <td>
+            <div class="mbar">
+              <div class="mbar-seg" style="width:15%;background:var(--so-color)"></div>
+              <div class="mbar-seg" style="width:50%;background:var(--rs-color)"></div>
+              <div class="mbar-seg" style="width:35%;background:var(--ps-color)"></div>
+            </div>
+            <div class="mlabel">15% SO / 50% RSU / 35% PRSU</div>
+          </td>
+          <td>CDA stated (core annual)</td>
+          <td class="note">Core annual program: 50% time-based RSUs, 15% stock options, 35% performance RSUs (PRSUs). The most programmatically developed LTI in the peer group — the only company to include performance equity in its recurring annual cycle. SPAC-conversion mechanics in FY2021 are excluded from core annual program analysis.</td>
+        </tr>
+
+        <!-- RVLV — updated per user input -->
+        <tr>
+          <td><span class="tk">RVLV</span><span class="co-name">Revolve Group</span></td>
+          <td>Apr 2020</td><td>Dec 2019</td>
+          <td class="c"><span class="badge by">YES</span></td>
+          <td class="c"><span class="badge bn">NO</span></td>
+          <td class="c"><span class="badge bn">NO</span></td>
+          <td class="c"><span class="badge bn">NO</span></td>
+          <td>
+            <div class="mbar">
+              <div class="mbar-seg" style="width:100%;background:var(--so-color)"></div>
+            </div>
+            <div class="mlabel">100% SO</div>
+          </td>
+          <td>Outstanding equity table</td>
+          <td class="note">No new grants made to NEOs in FY2019 (2019 Equity Incentive Plan adopted at IPO but annual cycle not yet initiated). Outstanding equity = 100% stock options (legacy grants from 2013–2017 under 2013 Plan). Co-CEOs held zero equity at FYE2019.</td>
+        </tr>
+
+        <!-- REAL -->
+        <tr>
+          <td><span class="tk">REAL</span><span class="co-name">The RealReal</span></td>
+          <td>Apr 2020</td><td>Dec 2019</td>
+          <td class="c"><span class="badge by">YES</span></td>
+          <td class="c"><span class="badge by">YES</span></td>
+          <td class="c"><span class="badge bn">NO</span></td>
+          <td class="c"><span class="badge bn">NO</span></td>
+          <td>
+            <div class="mbar">
+              <div class="mbar-seg" style="width:45%;background:var(--so-color)"></div>
+              <div class="mbar-seg" style="width:55%;background:var(--rs-color)"></div>
+            </div>
+            <div class="mlabel">~45% SO / ~55% RS</div>
+          </td>
+          <td>CDA table (GDFV)</td>
+          <td class="note">IPO June 2019. First year using RSUs — FY2018 was options-only. Consistent ~45/55 SO/RSU split across all 3 NEOs (CEO, CFO, COO). GDFV explicitly stated in CD&A. Options and RSUs both vest 1/16 quarterly (4 yrs).</td>
+        </tr>
+
+        <!-- SONO -->
+        <tr>
+          <td><span class="tk">SONO</span><span class="co-name">Sonos</span></td>
+          <td>Jan 2019</td><td>Sep 2018</td>
+          <td class="c"><span class="badge by">YES</span></td>
+          <td class="c"><span class="badge bn">NO</span></td>
+          <td class="c"><span class="badge bn">NO</span></td>
+          <td class="c"><span class="badge bn">NO</span></td>
+          <td>
+            <div class="mbar">
+              <div class="mbar-seg" style="width:100%;background:var(--so-color)"></div>
+            </div>
+            <div class="mlabel">100% SO</div>
+          </td>
+          <td>CDA stated + GOPBA</td>
+          <td class="note">IPO Aug 2018. Options-only in FY2018. CD&A explicitly signals planned shift to primarily time-based RSUs post-IPO. Annual refresh grants + IPO awards (all SO). No RSUs, PSUs, or PSOs in this filing.</td>
+        </tr>
+
+        <!-- SFIX -->
+        <tr>
+          <td><span class="tk">SFIX</span><span class="co-name">Stitch Fix</span></td>
+          <td>Nov 2019</td><td>Aug 2019</td>
+          <td class="c"><span class="badge by">YES</span></td>
+          <td class="c"><span class="badge by">YES</span></td>
+          <td class="c"><span class="badge bn">NO</span></td>
+          <td class="c"><span class="badge bn">NO</span></td>
+          <td>
+            <div class="mbar">
+              <div class="mbar-seg" style="width:50%;background:var(--so-color)"></div>
+              <div class="mbar-seg" style="width:50%;background:var(--rs-color)"></div>
+            </div>
+            <div class="mlabel">50% SO / 50% RS</div>
+          </td>
+          <td>CDA stated (explicit)</td>
+          <td class="note">CD&A explicitly states each NEO grant = "50% RSUs and 50% stock options" by design — the most explicitly defined mix in the peer group. Consistent across all NEOs granted (CEO, COO, CLO). First year using RSUs; FY2018 was options-only.</td>
+        </tr>
+
+        <!-- ELF -->
+        <tr>
+          <td><span class="tk">ELF</span><span class="co-name">e.l.f. Beauty</span></td>
+          <td>Apr 2017</td><td>Dec 2016</td>
+          <td class="c"><span class="badge by">YES</span></td>
+          <td class="c"><span class="badge by">YES</span></td>
+          <td class="c"><span class="badge bn">NO</span></td>
+          <td class="c"><span class="badge bn">NO</span></td>
+          <td>
+            <div class="mbar">
+              <div class="mbar-seg" style="width:53%;background:var(--so-color)"></div>
+              <div class="mbar-seg" style="width:47%;background:var(--rs-color)"></div>
+            </div>
+            <div class="mlabel">~53% SO / ~47% RS</div>
+          </td>
+          <td>SCT GDFV</td>
+          <td class="note">IPO Sep 2016. All 3 NEOs received IPO grants at $17.00 (options + RSUs, 4-year cliff vesting). ~53/47 SO/RSU mix consistent across all NEOs. Pre-IPO grants were options-only (TPG return hurdle performance component). Inaugural public-company grant cycle.</td>
+        </tr>
+
+        <!-- ETSY -->
+        <tr>
+          <td><span class="tk">ETSY</span><span class="co-name">Etsy</span></td>
+          <td>Apr 2016</td><td>Dec 2015</td>
+          <td class="c"><span class="badge by">YES</span></td>
+          <td class="c"><span class="badge by">YES</span></td>
+          <td class="c"><span class="badge bn">NO</span></td>
+          <td class="c"><span class="badge bn">NO</span></td>
+          <td>
+            <div class="mbar">
+              <div class="mbar-seg" style="width:91%;background:var(--so-color)"></div>
+              <div class="mbar-seg" style="width:9%;background:var(--rs-color)"></div>
+            </div>
+            <div class="mlabel">~91% SO / ~9% RS</div>
+          </td>
+          <td>SCT GDFV</td>
+          <td class="note">IPO Apr 2015. First proxy as public company (EGC). Jan 2015 annual grants = pure options for CEO + CFO. RSUs limited to CTO Allspaw only (Nov 2015 promotion grant — 1 of 3 NEOs). No formal performance equity. Program is early-stage, pre-institutional.</td>
+        </tr>
+
+        <!-- VNCE -->
+        <tr>
+          <td><span class="tk">VNCE</span><span class="co-name">Vince Holding</span></td>
+          <td>Apr 2016</td><td>Jan 2016</td>
+          <td class="c"><span class="badge by">YES</span></td>
+          <td class="c"><span class="badge bn">NO</span></td>
+          <td class="c"><span class="badge bn">NO</span></td>
+          <td class="c"><span class="badge bn">NO</span></td>
+          <td>
+            <div class="mbar">
+              <div class="mbar-seg" style="width:100%;background:var(--so-color)"></div>
+            </div>
+            <div class="mlabel">100% SO</div>
+          </td>
+          <td>SCT GDFV / narrative</td>
+          <td class="note">PE-backed (Sun Capital). Options-only — no RSUs or performance equity. FY2015 grants were new-hire/appointment options (CEO + CFO). Significant exec turnover (4 of 7 SCT NEOs departed). No structured annual LTI cycle; grants reactive to executive appointments.</td>
+        </tr>
+
+      </tbody>
+    </table>
+  </div>
+
+  <div style="margin-top:11px;padding:9px 13px;background:#fff;border:1px solid var(--sb-border);border-radius:5px;font-size:11px;color:var(--sb-subtle);display:flex;gap:22px;flex-wrap:wrap;">
+    <span><strong style="color:var(--so-color);">SO</strong> = Stock Options (time-based)</span>
+    <span><strong style="color:var(--rs-color);">RS/RSU</strong> = Time-Based Restricted Stock / RSUs</span>
+    <span><strong style="color:var(--ps-color);">PS/PRSU</strong> = Performance Shares / PSUs / PRSUs</span>
+    <span><strong style="color:var(--pso-color);">PSO</strong> = Performance Stock Options</span>
+    <span><strong>N/A</strong> = Non-standard / LLC vehicle</span>
+    <span><span class="fl">★</span> = One-time / non-recurring grant excluded from analysis</span>
+    <span><span class="fl">⚠</span> = No formal annual program</span>
+  </div>
+</div>
+
+<div class="footer">
+  Semler Brossy — Reformation Peer Group LTI Equity Vehicle Analysis &nbsp;·&nbsp; 17 Companies · One Row Per Company (Core Annual Program) · Proxy Years 2015–2022 &nbsp;·&nbsp; Sources: SEC DEF 14A filings
+</div>
+
+<!-- ════════════════ CHART.JS -->
+<script>
+const C = {
+  so:  '#002855',
+  rs:  '#0096BC',
+  ps:  '#FF7F32',
+  pso: '#78BE20',
+  na:  '#B0B8C4'
+};
+
+// ── 1. Prevalence
+new Chart(document.getElementById('prevChart'), {
+  type: 'bar',
+  data: {
+    labels: ['SO — Stock Options','RS/RSU — Time-Based','PS/PRSU — Perf. Shares','PSO — Perf. Options'],
+    datasets: [{
+      data: [15, 11, 1, 0],
+      backgroundColor: [C.so, C.rs, C.ps, C.pso],
+      borderRadius: 4, borderSkipped: false,
+    }]
+  },
+  options: {
+    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: { callbacks: { label: ctx => ` ${ctx.raw} of 17 companies (${Math.round(ctx.raw/17*100)}%)` } }
+    },
+    scales: {
+      x: { max: 17, grid: { color: '#EEF0F4' }, ticks: { stepSize: 1, font: { size: 11 }, callback: v => v } },
+      y: { grid: { display: false }, ticks: { font: { size: 11 } } }
+    }
+  }
+});
+
+// ── 2. Composition donut
+new Chart(document.getElementById('compChart'), {
+  type: 'doughnut',
+  data: {
+    labels: ['SO Only (6)','SO + RSU Blend (8)','RSU + SO + PS (HIMS) (1)','RSU Only — HNST (1)','LLC Units — AKA (1)'],
+    datasets: [{
+      data: [6, 8, 1, 1, 1],
+      backgroundColor: [C.so, '#005587', C.ps, C.rs, C.na],
+      borderWidth: 2, borderColor: '#fff', hoverOffset: 5
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false, cutout: '55%',
+    plugins: {
+      legend: { position: 'right', labels: { font: { size: 10 }, padding: 7, boxWidth: 11 } },
+      tooltip: { callbacks: { label: ctx => ` ${ctx.label}` } }
+    }
+  }
+});
+
+// ── 3. Mix by company — 15 companies (AKA + LVLU excluded)
+// Sorted: 100% SO companies first, then mixed, then RS-heavy
+const labels = [
+  'VNCE (FY2015)',
+  'TDUP (FY2021, legacy)',
+  'OLPX (FY2021)',
+  'SONO (FY2018)',
+  'BRLT (FY2021)',
+  'RVLV (FY2019, outstanding)',
+  'ETSY (FY2015)',
+  'WRBY (FY2021, annual)',
+  'FIGS (FY2021)',
+  'RENT (FY2021)',
+  'ELF (FY2016)',
+  'SFIX (FY2019)',
+  'REAL (FY2019)',
+  'HIMS (core annual)',
+  'HNST (FY2021)',
+];
+
+const soD  = [100, 100, 100, 100, 100, 100, 91,  75, 75, 69, 53, 50, 45, 15,  0];
+const rsD  = [  0,   0,   0,   0,   0,   0,  9,  25, 25, 31, 47, 50, 55, 50,100];
+const psD  = [  0,   0,   0,   0,   0,   0,  0,   0,  0,  0,  0,  0,  0, 35,  0];
+const psoD = [  0,   0,   0,   0,   0,   0,  0,   0,  0,  0,  0,  0,  0,  0,  0];
+
+new Chart(document.getElementById('mixChart'), {
+  type: 'bar',
+  data: {
+    labels,
+    datasets: [
+      { label: 'SO — Stock Options',       data: soD,  backgroundColor: C.so,  stack: 's' },
+      { label: 'RS/RSU — Time-Based',      data: rsD,  backgroundColor: C.rs,  stack: 's' },
+      { label: 'PS/PRSU — Perf. Shares',   data: psD,  backgroundColor: C.ps,  stack: 's' },
+      { label: 'PSO — Perf. Options',      data: psoD, backgroundColor: C.pso, stack: 's' },
+    ]
+  },
+  options: {
+    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: ctx => ctx.raw > 0 ? ` ${ctx.dataset.label}: ${ctx.raw}%` : null,
+          filter: item => item.raw > 0
+        }
+      }
+    },
+    scales: {
+      x: {
+        stacked: true, max: 100,
+        grid: { color: '#EEF0F4' },
+        ticks: { callback: v => v + '%', font: { size: 11 } }
+      },
+      y: {
+        stacked: true,
+        grid: { display: false },
+        ticks: { font: { size: 11 } }
+      }
+    }
+  }
+});
+</script>
+</body>
+</html>
